@@ -1,0 +1,28 @@
+[package]
+name = "octave"
+version = "0.3.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Experimental 4-of-8 relay-assisted key establishment with an abstract PSIV boundary"
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/moritayasuaki/octave"
+publish = false
+
+[features]
+default = ["std", "os-rng"]
+std = ["zeroize/std", "getrandom?/std"]
+os-rng = ["dep:getrandom"]
+
+[dependencies]
+rand_core = { version = "0.10.1", default-features = false }
+zeroize = { version = "1.9.0", default-features = false, features = ["alloc"] }
+subtle = { version = "2.6.1", default-features = false }
+getrandom = { version = "0.4.3", optional = true, features = ["sys_rng"] }
+
+[[example]]
+name = "roundtrip"
+required-features = ["os-rng"]
+
+[lints.rust]
+unsafe_code = "forbid"

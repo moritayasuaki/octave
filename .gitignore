@@ -1,0 +1,14 @@
+/target/
+/lean/.lake/
+__pycache__/
+*.tmp
+/tests/fixtures/lean-vectors.txt.??????
+
+# Local editor state and credentials
+.DS_Store
+.env
+.env.*
+*.pem
+*.key
+/.idea/
+/.vscode/

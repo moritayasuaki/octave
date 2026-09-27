@@ -17,12 +17,14 @@ For formal work, install [Lean's elan toolchain manager](https://lean-lang.org/i
 From the repository root, prepare the pinned dependency cache and check the proofs:
 
 ```sh
+sh scripts/prepare.sh
 (cd lean && lake exe cache get)
 sh scripts/check.sh lean
 ```
 
-Run `sh scripts/check.sh` for both. Logs are generated under `target/validation/`.
-The Lean cache is large and rebuildable; do not commit it or Rust build output.
+Run `sh scripts/check.sh` for both. Logs, build output and local notes belong under the ignored `.local/` directory.
+Cargo writes to `.local/target/`; preparation links `lean/.lake` to `.local/lean/`.
+Keep reproducible tests, proof sources and public documentation in the repository.
 
 After changing executable Lean definitions, run `sh scripts/export-vectors.sh`, review
 the fixture diff, and rerun the Rust checks. Commit intentional source, lockfile and
@@ -36,5 +38,5 @@ labels, candidate ambiguity and failure handling. Keep soundness/delivery hypoth
 explicit; do not introduce `sorry`, custom axioms or `native_decide` into proofs.
 
 For ordinary bugs, include a minimal reproduction using public dummy data, the crate
-revision and toolchain version. Follow [SECURITY.md](SECURITY.md) for security findings.
+revision and toolchain version. Follow [SECURITY.md](../SECURITY.md) for security findings.
 Do not put real roots, keys, credentials or private transcripts in issues or fixtures.

@@ -1,28 +1,20 @@
-# Octave v0.3 — normative 4-of-8 library and mathematical core
+# Octave v0.3 — protocol specification
 
-Project name: **Octave**.
+Octave is a 4-of-8 relay-assisted key-establishment library with a native Rust
+implementation and a checked Lean mathematical core. Its intended authenticated-
+encryption dependency is [ChaCha20-Poly1305-PSIV](docs/PSIV.md).
 
-Octave names the relay protocol and library; the underlying cipher remains PSIV.
+## 1. Scope
 
-Status: executable research specification with a native Rust library and a checked Lean mathematical core. The cryptographic dependency is the existing
-**Design Better Encryption PSIV** project. This document replaces the previous relay
-profile's 3-of-7 / five-agreement rule with **4-of-8 candidate reconstruction followed by
-unique confirmation**. It does not change the PSIV construction or its state layout.
+This specification defines sharing, labelled receipt, candidate enumeration,
+reconstruction and unique-confirmed-value selection. The Rust crate provides canonical
+share payload codecs, cryptographic RNG integration and a typed PSIV backend boundary.
+The Lean core proves algebraic facts and conditional protocol theorems.
 
-## 1. Sources and scope
-
-The protocol basis is the relay/client v0.1 design and its subsequent choice of
-4-of-8. The cryptographic interface comes from the existing PSIV project. The original
-design notes and downloadable relay archive are not included in this repository.
-PSIV 0.4.0-experimental's C header and README were inspected to preserve its interface.
-This is a specification based on recovered requirements, not a byte-for-byte update to
-an inspected v0.1 archive. See [provenance](docs/PROVENANCE.md) for the source boundary.
-
-This layer implements sharing, labelled receipt, enumeration, reconstruction, and selection.
-It proves algebraic facts and conditional protocol theorems. Networking, link provisioning,
-replay/nonce state machines, canonical transcript encoding, KDF implementation and actual
-PSIV calls remain outside this layer. The Rust crate implements canonical share payload
-codecs, cryptographic RNG integration and a typed PSIV backend boundary.
+A concrete PSIV backend, networking, link provisioning, replay/nonce state machines,
+canonical transcript encoding, KDF and confirmation exchange must be supplied by the
+integration. PSIV's construction and internal state layout are defined by its own
+specification and remain unchanged by Octave.
 
 ## 2. Normative parameters and trust boundary
 
@@ -51,7 +43,7 @@ An honest relay obtains `origin = Alice` from its authenticated incoming link st
 from an unauthenticated claimed-origin field. Bob assigns slots using the authenticated
 relay identity and fixed roster. Different claimed labels do not create additional identities.
 
-## 3. Unchanged PSIV dependency
+## 3. PSIV dependency contract
 
 | Item | Required existing interface |
 | --- | --- |
@@ -61,21 +53,21 @@ relay identity and fixed roster. Different claimed labels do not create addition
 | Encoded record | `ciphertext || tag` |
 | Plaintext maximum | 65,536 bytes per record |
 | Associated data maximum | 65,536 bytes per record |
-| Session operations | `psiv_init`, `psiv_seal`, `psiv_open`, `psiv_clear` |
+| Session operations | Initialize cached key setup, seal, open, clear |
 
 The nonce and associated data are passed separately, not embedded in the record.
 The context caches the dependency's key setup and is reusable across records.
 Decryption releases plaintext only after authentication succeeds. Authentication failure
 must not expose candidate plaintext through the API.
 
-`lean/Relay/PSIV.lean` records these sizes and a semantic session API. It is not a replacement
-C header or an FFI binding. `init` corresponds to `psiv_init`; the other operations
-correspond to seal/open/clear. Buffer ownership and precise C signatures must be taken from
-the actual dependency archive when linked.
+`lean/Relay/PSIV.lean` records these sizes and a semantic session API.
+`src/psiv.rs` exposes the corresponding `Backend` trait and `Session` wrapper. These
+are adapter contracts; they do not supply a cipher implementation or an FFI binding.
 
-This is **PSIV**, not XChaCha20-Poly1305. There is no 24-byte nonce, KMAC wrapper,
-new `B_key/B_tag/B_enc` packing, changed domain constant, or changed tag-counter layout.
-The actual dependency remains authoritative for all internal PSIV details.
+The [PSIV byte specification](https://github.com/moritayasuaki/psiv/blob/970d15e40add32c041a7dd8ffc6681a3b899ddaf/docs/SPEC.md)
+is authoritative for state packing, domain constants, padding and tag-counter layout.
+Use the specified 12-byte nonce and construction. Ordinary ChaCha20-Poly1305 and
+XChaCha20-Poly1305 are not compatible substitutes.
 
 ## 4. Secret sharing
 
@@ -247,12 +239,12 @@ colluding relays. Reusing masks across coordinates or sessions invalidates the s
 sampling condition. There is no robust Reed–Solomon correction of three errors asserted:
 the threshold improvement here relies on the explicitly assumed confirmation property.
 
-## 9. Verification and remaining work
+## 9. Verification scope
 
 The project pins Lean 4.32.1 and Mathlib v4.32.1 (full revisions in the lock file).
 See [verification](docs/VERIFICATION.md) for checked theorem names, test results, trust
 assumptions and reproducible commands. No concrete PSIV cipher implementation is included
-in these new files; the dependency's existing state layout remains untouched.
+in this crate; the dependency's existing state layout remains untouched.
 
 ## 10. Rust library and refinement status
 

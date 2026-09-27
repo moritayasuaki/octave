@@ -1,7 +1,7 @@
 # Octave Rust library API
 
 The `octave` crate is a native Rust implementation of the specified sharing and recovery
-layer. `src/` contains the implementation; the pre-existing `lean/Relay/` modules remain
+layer. `src/` contains the implementation; the `lean/Relay/` modules provide
 the mathematical reference. Rust is linked and used through Cargo; there is no Lean
 runtime, generated-C dependency or C ABI in this crate.
 
@@ -98,15 +98,14 @@ limits before invoking it, checks output lengths, and returns opened plaintext i
 zeroizing storage. The backend is required to verify authentication before returning
 plaintext. The wrapper cannot establish cryptographic correctness of a supplied backend.
 
-Types and constants match the actual `../psiv/c/psiv.h` interface inspected for this
-implementation: key `[u8;32]`, nonce `[u8;12]`, tag `[u8;16]`, external nonce/AD, record
+Types and constants follow the [PSIV contract](PSIV.md): key `[u8;32]`, nonce `[u8;12]`, tag `[u8;16]`, external nonce/AD, record
 `ciphertext || tag`, and message/AD limits of 65,536 bytes. Backend errors are preserved.
 Nonce allocation, replay handling, secure backend erasure and the contextual KDF remain
 application/backend obligations. No primitive implementation or internal state packing
 is introduced by the trait.
 
 The PSIV boundary tests use an explicitly non-cryptographic contract mock. They validate
-size/error/cleanup behavior only. The existing PSIV package is not linked by this crate.
+size/error/cleanup behavior only. The concrete PSIV package is not linked by this crate.
 
 ## Memory and platform scope
 
@@ -118,9 +117,8 @@ memory-erasure proof; candidate enumeration, equality counts and allocation can 
 
 Default features are `std` and `os-rng`. Disabling defaults gives `no_std + alloc` and
 requires caller-provided randomness. Actual target support for `SysRng` follows
-`getrandom`; no unsupported backend is silently substituted. Host validation was on
-macOS ARM64. `no_std` checks here use that host target and do not claim an embedded or
-WebAssembly execution test.
+`getrandom`; no unsupported backend is silently substituted. `no_std` tests exercise the host target; they do not establish embedded or
+WebAssembly support. See [verification](VERIFICATION.md) for coverage.
 
 Dependency API references: [rand_core](https://docs.rs/rand_core/0.10.1/rand_core/),
 [zeroize](https://docs.rs/zeroize/1.9.0/zeroize/),

@@ -61,6 +61,8 @@ jobs:
           curl --proto '=https' --tlsv1.2 -fsSL https://elan.lean-lang.org/elan-init.sh -o "$RUNNER_TEMP/elan-init.sh"
           sh "$RUNNER_TEMP/elan-init.sh" -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Prepare local build directories
+        run: sh scripts/prepare.sh
       - name: Fetch pinned Mathlib artifacts
         working-directory: lean
         run: lake exe cache get

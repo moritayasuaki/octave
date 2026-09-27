@@ -1,6 +1,6 @@
 /-!
-The dependency boundary recovered from “Design Better Encryption”. No cryptographic
-implementation or state packing is introduced here. These are semantic types, not a C ABI.
+The ChaCha20-Poly1305-PSIV dependency boundary. No cryptographic implementation or
+state packing is introduced here. These are semantic types, not a C ABI.
 -/
 namespace Relay.PSIV
 

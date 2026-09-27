@@ -1,6 +1,6 @@
 //! Dependency boundary for the existing PSIV implementation, not a new cipher.
 //!
-//! Matches PSIV 0.4.0-experimental's `c/psiv.h`: 32-byte keys, 12-byte nonces, 16-byte tags,
+//! PSIV contract: 32-byte keys, 12-byte nonces, 16-byte tags,
 //! cached setup, and ciphertext followed by tag. Backend implementations must
 //! preserve that project's state layout and authenticate before returning plaintext.
 //! This module does not supply a PSIV implementation or a confirmation KDF.

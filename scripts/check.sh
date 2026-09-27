@@ -13,7 +13,7 @@ case "$mode" in
 esac
 
 # Generated evidence belongs with build output, not beside the source files.
-log_dir="$project_dir/target/validation"
+log_dir="$project_dir/.local/validation"
 mkdir -p "$log_dir"
 run() {
   check_name=$1
@@ -37,6 +37,7 @@ if [ "$mode" != lean ]; then
 fi
 
 if [ "$mode" != rust ]; then
+  sh "$project_dir/scripts/prepare.sh"
   cd "$project_dir/lean"
   run lean-build lake build
   run lean-axioms lake env lean Audit.lean
@@ -47,4 +48,4 @@ if [ "$mode" != rust ]; then
   run lean-tests .lake/build/bin/relay_tests
   cat "$log_dir/lean-tests.log"
 fi
-printf 'PASS: %s checks. Logs: target/validation/\n' "$mode"
+printf 'PASS: %s checks. Logs: .local/validation/\n' "$mode"

@@ -47,8 +47,8 @@ jobs:
         run: |
           cargo +1.85.0 test --locked
           cargo +1.85.0 test --locked --no-default-features
-          cargo +1.85.0 test --locked --all-features
-          cargo +1.85.0 test --locked --no-default-features --features psiv
+          cargo +1.85.0 test --locked --no-default-features --features std
+          cargo +1.85.0 test --locked --no-default-features --features os-rng
 
   lean:
     name: Lean proofs and fixtures

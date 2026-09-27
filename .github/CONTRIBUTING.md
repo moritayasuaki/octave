@@ -3,8 +3,8 @@
 Octave is an experimental Rust library with a checked Lean reference. Keep the fixed
 4-of-8 profile, canonical encodings and unique-confirmation semantics aligned across
 the implementation, specification and proofs. The core is independent of a cipher,
-KDF or MAC. Keep the optional PSIV adapter isolated; preserve its 32-byte key, 12-byte
-nonce, 16-byte tag and existing state layout when changing that adapter.
+KDF or MAC. Cryptographic integrations belong to the application; keep cipher adapters
+out of the core.
 
 ## Local checks
 
@@ -23,8 +23,8 @@ sh scripts/prepare.sh
 sh scripts/check.sh lean
 ```
 
-The Rust script checks default, no-default, all-feature and `no_std` plus PSIV builds.
-The Lean script checks the core, proofs and explicitly imported PSIV contract.
+The Rust script checks default, no-default, std-only and os-rng-only builds.
+The Lean script checks the mathematical core, proof dependencies and native tests.
 Run `sh scripts/check.sh` for both. Logs, build output and local notes belong under the ignored `.local/` directory.
 Cargo writes to `.local/target/`; preparation links `lean/.lake` to `.local/lean/`.
 Keep reproducible tests, proof sources and public documentation in the repository.

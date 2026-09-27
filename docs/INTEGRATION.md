@@ -79,9 +79,8 @@ replay rules, state transitions, error handling and security assumptions. Public
 and adversarial tests should cover those choices. Confirmation and share-transport
 confidentiality remain separate requirements.
 
-[PSIV](PSIV.md) is an optional encryption choice when its nonce-misuse resistance and
-key-commitment properties are desired. It is not required by the sharing algorithm or
-selection proof, and enabling the adapter feature does not satisfy the obligations above.
+The application selects its cryptographic libraries directly. Octave provides no cipher
+adapters and does not prescribe an encryption algorithm.
 
 See the [normative specification](../SPEC.md), [Rust API](API.md) and
 [verification scope](VERIFICATION.md).

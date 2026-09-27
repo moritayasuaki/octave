@@ -91,27 +91,6 @@ root. Ordinary MAC or AEAD security alone is not a proof of this property. See t
 local `roundtrip` example uses equality to a known test root and is not an authenticated
 network protocol.
 
-## Optional PSIV adapter
-
-Enable `features = ["psiv"]` to expose `octave::psiv`. The feature adds no cipher
-dependency and is not called by sharing or recovery.
-
-`psiv::Backend` preserves `init/seal/open/clear` semantics for PSIV integrations.
-`psiv::Session<B>` caches one backend instance, calls `clear` on drop, validates input
-limits before invoking it, checks output lengths, and returns opened plaintext in
-zeroizing storage. The backend is required to verify authentication before returning
-plaintext. The wrapper cannot establish cryptographic correctness of a supplied backend.
-
-Types and constants follow the [PSIV contract](PSIV.md): key `[u8;32]`, nonce `[u8;12]`,
-tag `[u8;16]`, external nonce/AD, record
-`ciphertext || tag`, and message/AD limits of 65,536 bytes. Backend errors are preserved.
-Nonce allocation, replay handling, secure backend erasure and the contextual KDF remain
-application/backend obligations. No primitive implementation or internal state packing
-is introduced by the trait.
-
-The PSIV boundary tests use an explicitly non-cryptographic contract mock. They validate
-size/error/cleanup behavior only. The concrete PSIV package is not linked by this crate.
-
 ## Memory and platform scope
 
 The crate forbids unsafe code in its own source. Root, coefficient, share and candidate
@@ -126,10 +105,14 @@ memory-erasure proof; candidate enumeration, equality counts and allocation can 
 | --- | --- |
 | Default (`std`, `os-rng`) | Sharing/recovery core plus `SysRng` |
 | `default-features = false` | `no_std + alloc` core; caller supplies randomness |
-| `psiv` (opt-in) | PSIV adapter types and wrapper, with or without `std` |
+| `std` only | Core with standard-library support; caller supplies randomness |
+| `os-rng` only | `no_std + alloc` core with the system RNG adapter |
 
-Octave 0.4 keeps the core API and share encoding from 0.3. Existing users importing
-`octave::psiv` must enable the feature. There is no default cipher, KDF or MAC.
+Octave 0.5 removes the former `psiv` feature and `octave::psiv` module. Remove that
+feature from dependency declarations and use the chosen cryptographic library directly
+in your application. Core sharing/recovery APIs and share encodings are unchanged.
+Lean users import `Relay`; the generic context is `Relay.ConfirmationContext`.
+There is no cipher, KDF or MAC implementation in this crate.
 
 Actual target support for `SysRng` follows `getrandom`; no unsupported backend is
 silently substituted. `no_std` tests exercise the host target; they do not establish

@@ -65,21 +65,6 @@ Run `cargo run --example roundtrip`. Default features provide the system RNG;
 See the [API guide](docs/API.md) for encoding, receipt, recovery and error handling.
 The crate is available as a Git dependency and is not published on crates.io.
 
-## Optional PSIV adapter
-
-The `psiv` feature exposes an adapter contract for **ChaCha20-Poly1305-PSIV**, an
-authenticated-encryption construction designed for nonce-misuse resistance and key
-commitment. Enable it only when integrating that construction:
-
-```toml
-octave = { git = "https://github.com/moritayasuaki/octave.git", features = ["psiv"] }
-```
-
-The adapter preserves PSIV's 32-byte key, 12-byte nonce and 16-byte tag. It does not
-link a concrete backend or provide confirmation automatically. Read [the PSIV guide](docs/PSIV.md)
-for the construction, contract and migration from Octave 0.3. Other integrations use
-the core callback without this feature.
-
 ## Specification and verification
 
 - [Protocol specification](SPEC.md): normative profile and conditional guarantees.
@@ -89,7 +74,7 @@ the core callback without this feature.
 
 ```sh
 cargo test --locked       # Core tests; no Lean installation needed
-sh scripts/check.sh rust # Core and optional-feature checks
+sh scripts/check.sh rust # Tests, formatting, linting and documentation
 ```
 
 **Experimental research software.** The Lean proofs assume confirmation soundness and

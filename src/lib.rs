@@ -13,8 +13,7 @@
 //!
 //! This is experimental Rust code tested against the checked Lean definitions.
 //! The Rust implementation is not itself formally verified or established to be
-//! constant time. The core does not select a cipher, KDF or MAC. The optional
-//! `psiv` feature exposes a PSIV adapter contract without linking a cipher backend.
+//! constant time. The core does not select or implement a cipher, KDF or MAC.
 //!
 //! ```
 //! use octave::{Coefficients, ReceivedShares, RootSecret, split_with_coefficients};
@@ -43,9 +42,6 @@ mod error;
 mod field;
 mod secret;
 mod sharing;
-
-#[cfg(feature = "psiv")]
-pub mod psiv;
 
 pub use error::{ConfirmationError, Error, RandomError};
 pub use rand_core;

@@ -1,4 +1,4 @@
-# Octave v0.4 — protocol specification
+# Octave v0.5 — protocol specification
 
 Octave is a cipher-independent 4-of-8 relay-assisted key-establishment library with
 a native Rust implementation and a checked Lean mathematical core.
@@ -15,7 +15,6 @@ A concrete protocol must supply confidential authenticated transport, link provi
 replay/freshness state, canonical transcript encoding, key derivation and a confirmation
 exchange satisfying the stated hypotheses. The [integration contract](docs/INTEGRATION.md)
 details these obligations. No concrete cryptographic suite is selected by the core.
-An optional [PSIV adapter](docs/PSIV.md) is provided for integrations choosing PSIV.
 
 ## 2. Normative parameters and trust boundary
 
@@ -64,9 +63,8 @@ candidate-selection soundness hypothesis.
 
 `lean/Relay/Confirmation.lean` defines the cipher-independent `Relay.ConfirmationContext`.
 This semantic structure records required transcript fields, not an encoding or a proof
-that a supplied callback binds them. The core import `Relay` does not import `Relay.PSIV`.
-The Rust `psiv` module is available only with the optional `psiv` feature. Its contract
-and unchanged parameters are described in [Appendix A](#appendix-a-optional-psiv-contract).
+that a supplied callback binds them. No cipher adapter or cryptographic backend is
+part of the Rust library or Lean core.
 
 ## 4. Secret sharing
 
@@ -244,7 +242,7 @@ the threshold improvement here relies on the explicitly assumed confirmation pro
 The project pins Lean 4.32.1 and Mathlib v4.32.1 (full revisions in the lock file).
 See [verification](docs/VERIFICATION.md) for checked theorem names, test results, trust
 assumptions and reproducible commands. No concrete cipher, KDF or confirmation exchange
-is implemented by the core. The optional PSIV contract is checked separately.
+is implemented by the core.
 
 ## 10. Rust library and refinement status
 
@@ -253,29 +251,4 @@ for public types, error handling, byte formats, RNG requirements and feature sel
 It runs without the Lean runtime. The checked-in fixtures are generated directly by
 `lean/VectorMain.lean` and compared with Rust in `tests/lean_vectors.rs`, including all 280
 worst-case fault placements. Differential testing is not a formal proof of Rust/Lean
-equivalence. Core APIs and encodings are independent of the optional PSIV feature.
-
-## Appendix A. Optional PSIV contract
-
-The `psiv` Cargo feature exposes `src/psiv.rs`. Lean integrations explicitly import
-`Relay.PSIV`. Neither adapter is required by the sharing or confirmation core.
-
-| Item | PSIV interface |
-| --- | --- |
-| Key | 32 bytes |
-| External nonce | 12 bytes |
-| Authentication tag | 16 bytes |
-| Encoded record | Ciphertext followed by tag |
-| Plaintext maximum | 65,536 bytes per record |
-| Associated data maximum | 65,536 bytes per record |
-| Session operations | Initialize cached key setup, seal, open, clear |
-
-The nonce and associated data are supplied separately. The context caches key setup.
-Decryption releases plaintext only after authentication succeeds. The adapter defines
-these contracts and validates lengths; it supplies no concrete backend or confirmation
-predicate. Enabling it does not change any core guarantee.
-
-The [PSIV byte specification](https://github.com/moritayasuaki/psiv/blob/970d15e40add32c041a7dd8ffc6681a3b899ddaf/docs/SPEC.md)
-is authoritative for state packing, domain constants, padding and tag-counter layout.
-These internals remain unchanged. A profile selecting PSIV must preserve its construction;
-ordinary ChaCha20-Poly1305 and XChaCha20-Poly1305 are not compatible substitutes.
+equivalence. The core API and encodings are independent of any cipher choice.

@@ -1,20 +1,21 @@
-# Octave v0.3 — protocol specification
+# Octave v0.4 — protocol specification
 
-Octave is a 4-of-8 relay-assisted key-establishment library with a native Rust
-implementation and a checked Lean mathematical core. Its intended authenticated-
-encryption dependency is [ChaCha20-Poly1305-PSIV](docs/PSIV.md).
+Octave is a cipher-independent 4-of-8 relay-assisted key-establishment library with
+a native Rust implementation and a checked Lean mathematical core.
 
 ## 1. Scope
 
 This specification defines sharing, labelled receipt, candidate enumeration,
 reconstruction and unique-confirmed-value selection. The Rust crate provides canonical
-share payload codecs, cryptographic RNG integration and a typed PSIV backend boundary.
-The Lean core proves algebraic facts and conditional protocol theorems.
+share payload codecs, cryptographic RNG integration and an abstract confirmation callback.
+The Lean core proves algebraic facts and conditional protocol theorems without assuming
+any particular cipher, KDF or MAC.
 
-A concrete PSIV backend, networking, link provisioning, replay/nonce state machines,
-canonical transcript encoding, KDF and confirmation exchange must be supplied by the
-integration. PSIV's construction and internal state layout are defined by its own
-specification and remain unchanged by Octave.
+A concrete protocol must supply confidential authenticated transport, link provisioning,
+replay/freshness state, canonical transcript encoding, key derivation and a confirmation
+exchange satisfying the stated hypotheses. The [integration contract](docs/INTEGRATION.md)
+details these obligations. No concrete cryptographic suite is selected by the core.
+An optional [PSIV adapter](docs/PSIV.md) is provided for integrations choosing PSIV.
 
 ## 2. Normative parameters and trust boundary
 
@@ -38,36 +39,34 @@ fixed session. This is an explicit hypothesis, not something deduced from a slot
 Up to three corrupt slots can contain arbitrary values or be absent. The adversary may
 deny confirmation, in which case this protocol can fail. No unconditional liveness claim is made.
 
-Alice and Bob have separately provisioned authenticated symmetric links to each relay.
+Alice and Bob have separately provisioned confidential, authenticated symmetric links
+to each relay. Share privacy requires confidentiality of honest links as well as the
+relay corruption bound; an observer learning four valid shares can reconstruct the root.
 An honest relay obtains `origin = Alice` from its authenticated incoming link state, never
 from an unauthenticated claimed-origin field. Bob assigns slots using the authenticated
 relay identity and fixed roster. Different claimed labels do not create additional identities.
 
-## 3. PSIV dependency contract
+## 3. Cryptographic integration contract
 
-| Item | Required existing interface |
+| Function | Required property |
 | --- | --- |
-| Key | 32 bytes |
-| External nonce | 12 bytes |
-| Authentication tag | 16 bytes |
-| Encoded record | Ciphertext followed by tag |
-| Plaintext maximum | 65,536 bytes per record |
-| Associated data maximum | 65,536 bytes per record |
-| Session operations | Initialize cached key setup, seal, open, clear |
+| Share generation | Fresh independent uniform field coefficients from secure randomness |
+| Share transport | Confidentiality, authenticated identities and session/replay binding |
+| Key derivation | Keys separated by session context, purpose and direction |
+| Candidate confirmation | Fixed evidence and transcript; every accepted candidate equals the true root |
+| Application traffic | A completed handshake and an independently specified encryption/key lifecycle |
 
-The nonce and associated data are passed separately, not embedded in the record.
-The context caches the dependency's key setup and is reusable across records.
-Decryption releases plaintext only after authentication succeeds. Authentication failure
-must not expose candidate plaintext through the API.
+The confirmation predicate is supplied by the integration. Encryption of confirmation
+payloads is not itself a core requirement, but a MAC does not provide confidentiality
+for shares. An integration may use existing protected transport without an Octave cipher
+adapter. Ordinary authentication or encryption correctness alone does not establish the
+candidate-selection soundness hypothesis.
 
-`lean/Relay/PSIV.lean` records these sizes and a semantic session API.
-`src/psiv.rs` exposes the corresponding `Backend` trait and `Session` wrapper. These
-are adapter contracts; they do not supply a cipher implementation or an FFI binding.
-
-The [PSIV byte specification](https://github.com/moritayasuaki/psiv/blob/970d15e40add32c041a7dd8ffc6681a3b899ddaf/docs/SPEC.md)
-is authoritative for state packing, domain constants, padding and tag-counter layout.
-Use the specified 12-byte nonce and construction. Ordinary ChaCha20-Poly1305 and
-XChaCha20-Poly1305 are not compatible substitutes.
+`lean/Relay/Confirmation.lean` defines the cipher-independent `Relay.ConfirmationContext`.
+This semantic structure records required transcript fields, not an encoding or a proof
+that a supplied callback binds them. The core import `Relay` does not import `Relay.PSIV`.
+The Rust `psiv` module is available only with the optional `psiv` feature. Its contract
+and unchanged parameters are described in [Appendix A](#appendix-a-optional-psiv-contract).
 
 ## 4. Secret sharing
 
@@ -178,16 +177,17 @@ A timeout, missing evidence or failed verification supplies no confirmation. Rus
 each distinct canonical root once; verifier errors fail closed and return no root.
 All successful predicate results are considered before returning a unique root.
 
-Confirmation must be bound through a canonical encoding to protocol version, PSIV suite,
-this 4-of-8 field profile, fresh session identifier, ordered peer identities and roles,
+Confirmation must be bound through a canonical encoding to protocol version,
+cryptographic suite, this 4-of-8 field profile, fresh session identifier, ordered peer identities and roles,
 ordered relay roster, direction, and responder challenge. Separate KDF labels derive
-confirmation A→B, confirmation B→A, traffic A→B and traffic B→A keys. Derived PSIV keys
-are 32 bytes. The root is input material for the existing protocol's contextual KDF, not
-an instruction to alter PSIV's internal setup or add a per-record KDF inside PSIV.
+confirmation A→B, confirmation B→A, traffic A→B and traffic B→A keys. Key lengths and
+cryptographic algorithms belong to the selected integration profile. The 32-byte root
+is input material for contextual key derivation, not a protocol-wide traffic key.
 
 The candidate-dependent KDF and actual confirmation exchange are deliberately abstract.
-An adapter must bind a fixed transcript before candidate checks, enforce record/nonce
-limits, and avoid a circular design in which each candidate is permitted to manufacture
+An adapter must bind a fixed transcript before candidate checks, enforce its chosen
+algorithms' usage limits and freshness/replay rules, and avoid a circular design in
+which each candidate is permitted to manufacture
 its own apparently valid confirmation. Directional confirmations must not reflect into
 one another. The opaque predicate and typed context alone do not implement these checks.
 
@@ -203,12 +203,12 @@ Lean proves that any returned value equals S under this hypothesis. Separately, 
 in the candidate list and `confirms(S) = true`, soundness implies successful selection of S.
 With ≤3 corrupt relays, ≤1 additional outage and honest delivery, S is in the list.
 
-These are deterministic implications. Proving that the PSIV/KDF confirmation adapter
+These are deterministic implications. Proving that a concrete confirmation integration
 satisfies the hypothesis with negligible failure probability is a separate cryptographic
-reduction. Ordinary AEAD correctness or ciphertext integrity alone does not establish
-cross-candidate, cross-key or transcript-bound confirmation soundness. This release gives
-no unconditional `70 / 2^128` bound, no proof of PSIV key commitment, and no post-quantum
-security theorem. A probabilistic bound requires the actual adapter and its security model.
+reduction. Ordinary MAC unforgeability, AEAD correctness or ciphertext integrity alone
+does not establish cross-candidate, cross-key or transcript-bound confirmation soundness. This release gives
+no unconditional `70 / 2^128` bound and no post-quantum security theorem. A probabilistic
+bound requires the actual adapter and its security model.
 
 Local successful selection is necessary for eventual session establishment. Full mutual
 confirmation and the protocol's replay/nonce state machines still have to be implemented
@@ -243,14 +243,39 @@ the threshold improvement here relies on the explicitly assumed confirmation pro
 
 The project pins Lean 4.32.1 and Mathlib v4.32.1 (full revisions in the lock file).
 See [verification](docs/VERIFICATION.md) for checked theorem names, test results, trust
-assumptions and reproducible commands. No concrete PSIV cipher implementation is included
-in this crate; the dependency's existing state layout remains untouched.
+assumptions and reproducible commands. No concrete cipher, KDF or confirmation exchange
+is implemented by the core. The optional PSIV contract is checked separately.
 
 ## 10. Rust library and refinement status
 
 The `octave` Cargo crate is the native application library. See [API guide](docs/API.md)
-for public types, error handling, byte formats, RNG requirements, and PSIV adapter use.
+for public types, error handling, byte formats, RNG requirements and feature selection.
 It runs without the Lean runtime. The checked-in fixtures are generated directly by
 `lean/VectorMain.lean` and compared with Rust in `tests/lean_vectors.rs`, including all 280
 worst-case fault placements. Differential testing is not a formal proof of Rust/Lean
-equivalence. No PSIV state packing was changed or reimplemented.
+equivalence. Core APIs and encodings are independent of the optional PSIV feature.
+
+## Appendix A. Optional PSIV contract
+
+The `psiv` Cargo feature exposes `src/psiv.rs`. Lean integrations explicitly import
+`Relay.PSIV`. Neither adapter is required by the sharing or confirmation core.
+
+| Item | PSIV interface |
+| --- | --- |
+| Key | 32 bytes |
+| External nonce | 12 bytes |
+| Authentication tag | 16 bytes |
+| Encoded record | Ciphertext followed by tag |
+| Plaintext maximum | 65,536 bytes per record |
+| Associated data maximum | 65,536 bytes per record |
+| Session operations | Initialize cached key setup, seal, open, clear |
+
+The nonce and associated data are supplied separately. The context caches key setup.
+Decryption releases plaintext only after authentication succeeds. The adapter defines
+these contracts and validates lengths; it supplies no concrete backend or confirmation
+predicate. Enabling it does not change any core guarantee.
+
+The [PSIV byte specification](https://github.com/moritayasuaki/psiv/blob/970d15e40add32c041a7dd8ffc6681a3b899ddaf/docs/SPEC.md)
+is authoritative for state packing, domain constants, padding and tag-counter layout.
+These internals remain unchanged. A profile selecting PSIV must preserve its construction;
+ordinary ChaCha20-Poly1305 and XChaCha20-Poly1305 are not compatible substitutes.

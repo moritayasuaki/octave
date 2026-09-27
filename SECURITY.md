@@ -2,12 +2,14 @@
 
 Octave is experimental research software. It is not ready to protect production data.
 The Lean results prove algebraic and protocol properties under explicit hypotheses;
-they do not prove the native Rust implementation, the PSIV primitive or an end-to-end
+they do not prove the native Rust implementation, a cryptographic primitive or an end-to-end
 network protocol secure. See [the verification report](docs/VERIFICATION.md).
 
-The PSIV backend and confirmation predicate remain abstract. Real integrations must
-provide authenticated ingress, fixed transcript-bound confirmation, a suitable KDF,
-nonce/replay management and cryptographic randomness. Examples use public test oracles.
+The core selects no cipher, KDF or MAC. Real integrations must provide confidential
+authenticated relay links, fixed transcript-bound confirmation, suitable key derivation,
+freshness/replay management and cryptographic randomness. PSIV is an optional adapter
+contract; enabling it supplies no cipher backend or security proof. Follow the
+[integration contract](docs/INTEGRATION.md). Examples use public test oracles.
 Constant-time execution, complete memory erasure and a post-quantum security reduction
 are not established. There is no supported production release or response-time guarantee.
 

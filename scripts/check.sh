@@ -29,9 +29,12 @@ if [ "$mode" != lean ]; then
   run rust-format cargo fmt --all -- --check
   run rust-tests cargo test --locked
   run rust-no-std cargo test --locked --no-default-features
-  run rust-release-tests cargo test --locked --release
+  run rust-all-features cargo test --locked --all-features
+  run rust-no-std-psiv cargo test --locked --no-default-features --features psiv
+  run rust-release-tests cargo test --locked --release --all-features
   run rust-build cargo build --locked --release --lib
   run rust-clippy cargo clippy --locked --all-targets --all-features -- -D warnings
+  run rust-core-docs env RUSTDOCFLAGS="-D warnings" cargo doc --locked --no-deps
   run rust-docs env RUSTDOCFLAGS="-D warnings" cargo doc --locked --no-deps --all-features
   run rust-example cargo run --locked --example roundtrip
 fi
@@ -40,6 +43,7 @@ if [ "$mode" != rust ]; then
   sh "$project_dir/scripts/prepare.sh"
   cd "$project_dir/lean"
   run lean-build lake build
+  run lean-psiv lake build Relay.PSIV
   run lean-axioms lake env lean Audit.lean
   if grep -En 'sorryAx|Lean\.ofReduceBool|error:' "$log_dir/lean-axioms.log"; then
     printf '%s\n' 'FAIL: unexpected proof dependency or audit error' >&2

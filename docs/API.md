@@ -40,8 +40,8 @@ invalid inputs modulo 257. A field value 256 is valid share data but invalid in 
 byte-root candidate. Such candidates are rejected before confirmation callbacks run.
 
 These encodings are payload formats, not authenticated transport envelopes. They contain
-no session ID, peer identity, nonce, PSIV record or transcript. The application must
-authenticate and validate those bindings before inserting a share.
+no session ID, peer identity, nonce, encrypted record or transcript. The application must
+protect share confidentiality and authenticate those bindings before inserting a share.
 
 ## Receipt and recovery
 
@@ -86,19 +86,24 @@ early success skips checking other candidates. A network adapter may collect evi
 asynchronously first, then use this synchronous fixed-evidence predicate.
 
 The guarantee remains conditional: every confirmed candidate must equal Alice's real
-root. Ordinary AEAD correctness or a 16-byte tag is not a proof of this property. The
+root. Ordinary MAC or AEAD security alone is not a proof of this property. See the
+[integration contract](INTEGRATION.md) for the required security argument. The
 local `roundtrip` example uses equality to a known test root and is not an authenticated
 network protocol.
 
-## PSIV adapter
+## Optional PSIV adapter
 
-`psiv::Backend` preserves `init/seal/open/clear` semantics of the existing PSIV dependency.
+Enable `features = ["psiv"]` to expose `octave::psiv`. The feature adds no cipher
+dependency and is not called by sharing or recovery.
+
+`psiv::Backend` preserves `init/seal/open/clear` semantics for PSIV integrations.
 `psiv::Session<B>` caches one backend instance, calls `clear` on drop, validates input
 limits before invoking it, checks output lengths, and returns opened plaintext in
 zeroizing storage. The backend is required to verify authentication before returning
 plaintext. The wrapper cannot establish cryptographic correctness of a supplied backend.
 
-Types and constants follow the [PSIV contract](PSIV.md): key `[u8;32]`, nonce `[u8;12]`, tag `[u8;16]`, external nonce/AD, record
+Types and constants follow the [PSIV contract](PSIV.md): key `[u8;32]`, nonce `[u8;12]`,
+tag `[u8;16]`, external nonce/AD, record
 `ciphertext || tag`, and message/AD limits of 65,536 bytes. Backend errors are preserved.
 Nonce allocation, replay handling, secure backend erasure and the contextual KDF remain
 application/backend obligations. No primitive implementation or internal state packing
@@ -115,10 +120,20 @@ zeroizing arrays where possible. Copies created by the compiler, caller, stack m
 operating system or backend are not guaranteed erased. This is not a constant-time or
 memory-erasure proof; candidate enumeration, equality counts and allocation can vary.
 
-Default features are `std` and `os-rng`. Disabling defaults gives `no_std + alloc` and
-requires caller-provided randomness. Actual target support for `SysRng` follows
-`getrandom`; no unsupported backend is silently substituted. `no_std` tests exercise the host target; they do not establish embedded or
-WebAssembly support. See [verification](VERIFICATION.md) for coverage.
+## Features and migration
+
+| Feature selection | Available interface |
+| --- | --- |
+| Default (`std`, `os-rng`) | Sharing/recovery core plus `SysRng` |
+| `default-features = false` | `no_std + alloc` core; caller supplies randomness |
+| `psiv` (opt-in) | PSIV adapter types and wrapper, with or without `std` |
+
+Octave 0.4 keeps the core API and share encoding from 0.3. Existing users importing
+`octave::psiv` must enable the feature. There is no default cipher, KDF or MAC.
+
+Actual target support for `SysRng` follows `getrandom`; no unsupported backend is
+silently substituted. `no_std` tests exercise the host target; they do not establish
+embedded or WebAssembly support. See [verification](VERIFICATION.md) for coverage.
 
 Dependency API references: [rand_core](https://docs.rs/rand_core/0.10.1/rand_core/),
 [zeroize](https://docs.rs/zeroize/1.9.0/zeroize/),

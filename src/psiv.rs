@@ -1,4 +1,7 @@
-//! Dependency boundary for the existing PSIV implementation, not a new cipher.
+//! Optional PSIV adapter contract, enabled by the `psiv` feature.
+//!
+//! Sharing and confirmation do not call this module. Enabling the feature does
+//! not link a concrete cipher backend or install a confirmation predicate.
 //!
 //! PSIV contract: 32-byte keys, 12-byte nonces, 16-byte tags,
 //! cached setup, and ciphertext followed by tag. Backend implementations must

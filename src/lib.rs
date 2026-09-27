@@ -5,14 +5,16 @@
 //! predicate tolerates three corrupt relays and one additional outage.
 //!
 //! # Boundary
-//! The caller authenticates relay identities and session context **before**
+//! Shares travel over confidential, authenticated links. The caller validates
+//! relay identities and session context **before**
 //! inserting shares. The confirmation callback verifies fixed evidence for one
 //! immutable transcript. Neither successful interpolation nor a callback that
 //! simply returns `true` provides authentication.
 //!
 //! This is experimental Rust code tested against the checked Lean definitions.
 //! The Rust implementation is not itself formally verified or established to be
-//! constant time. PSIV remains an abstract dependency in [`psiv`].
+//! constant time. The core does not select a cipher, KDF or MAC. The optional
+//! `psiv` feature exposes a PSIV adapter contract without linking a cipher backend.
 //!
 //! ```
 //! use octave::{Coefficients, ReceivedShares, RootSecret, split_with_coefficients};
@@ -42,6 +44,7 @@ mod field;
 mod secret;
 mod sharing;
 
+#[cfg(feature = "psiv")]
 pub mod psiv;
 
 pub use error::{ConfirmationError, Error, RandomError};

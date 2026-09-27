@@ -286,7 +286,7 @@ impl CandidateSet {
     }
     /// Verify each distinct root at most once, and finish all checks before success.
     /// Verifier errors fail closed; two different successful roots are ambiguous.
-    /// A successful callback is an assumption at this layer, not a PSIV security proof.
+    /// A successful callback is an assumption at this layer, not a cryptographic security proof.
     pub fn confirm<E>(
         &self,
         verifies: impl Fn(&RootSecret) -> Result<bool, E>,

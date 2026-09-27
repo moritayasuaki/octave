@@ -54,7 +54,7 @@ theorem exists_privacy_mask (observed : Finset RelayId) (nodes : RelayId → F)
       (fun x => if x = 0 then (1 : F) else 0) hn hm
 
 /-- An explicit translation bijection between the two secret-conditioned view fibers.
-This is the combinatorial core of perfect privacy; it makes no PSIV assumption. -/
+This is the combinatorial core of perfect privacy; it makes no cipher assumption. -/
 def privacyEquiv (observed : Finset RelayId) (nodes values : RelayId → F)
     (s₀ s₁ : F) (mask : F[X]) (hd : mask.degree < 4) (hz : mask.eval 0 = 1)
     (hv : ∀ i ∈ observed, mask.eval (nodes i) = 0) :

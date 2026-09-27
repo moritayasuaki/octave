@@ -1,9 +1,28 @@
-# PSIV and Octave
+# Optional PSIV integration
+
+## Enable the adapter
+
+Octave's sharing and confirmation core works without PSIV. To expose `octave::psiv`:
+
+```toml
+[dependencies]
+octave = { git = "https://github.com/moritayasuaki/octave.git", features = ["psiv"] }
+```
+
+The feature adds no cipher dependency. It exposes the backend trait, types and session
+wrapper; applications still supply a concrete implementation. It is also available with
+`default-features = false` for `no_std + alloc` integrations.
+
+**Migration from 0.3:** Octave 0.4 requires the `psiv` feature for existing imports of
+`octave::psiv`. Core Rust APIs and share encodings are unchanged. In Lean, explicitly
+`import Relay.PSIV` to use the adapter contract; `import Relay` exposes the generic core.
+The context is now `Relay.ConfirmationContext`, with a compatibility type alias under
+`Relay.PSIV` when that module is imported.
 
 ## Construction and sources
 
-ChaCha20-Poly1305-PSIV is the authenticated-encryption dependency for Octave's intended
-relay protocol. Its synthetic tag binds the plaintext, associated data, nonce and key;
+ChaCha20-Poly1305-PSIV is an optional authenticated-encryption choice for a relay
+protocol integration. Its synthetic tag binds the plaintext, associated data, nonce and key;
 the tag also determines the encryption stream. Opening a record authenticates the
 recovered plaintext before releasing it.
 
@@ -44,26 +63,17 @@ This crate supplies no backend implementation. Its boundary tests use a non-cryp
 mock only to exercise size checks, errors and cleanup. To encrypt data directly, use
 the [PSIV Rust library](https://github.com/moritayasuaki/psiv/tree/main/rust/psiv).
 
-## Confirmation in a relay protocol
+## Confirmation and security scope
 
-An integration derives a confirmation key from each candidate root and a fixed session
-transcript, then verifies evidence received for that transcript. Octave's synchronous
-callback has the form `Fn(&RootSecret) -> Result<bool, VerificationError>`.
+PSIV's nonce-misuse resistance and key commitment may be useful in a concrete protocol,
+but neither property alone establishes Octave's confirmation-soundness hypothesis.
+The optional adapter is not invoked by share generation, reconstruction or candidate
+selection. A backend does not install a verifier or implement a handshake.
 
-The transcript must bind the version, suite, 4-of-8 profile, session identifier, ordered
-peer identities and roles, ordered relay roster, direction and responder challenge.
-Use separate KDF domains for confirmation and traffic in each direction. Authenticate
-relay identity and session context before inserting a share.
+Follow the [integration contract](INTEGRATION.md) for fixed evidence, transcript binding,
+key separation, confidential share transport and the required security argument.
+If a chosen profile uses PSIV, preserve the construction and parameters above; ordinary
+ChaCha20-Poly1305 and XChaCha20-Poly1305 are not substitutes for that profile.
 
-Verify the same evidence for every candidate. Generating new evidence under the candidate
-being tested is circular and does not confirm anything. A successful interpolation is
-also insufficient. Octave checks every distinct candidate and succeeds only when exactly
-one is confirmed; verifier errors fail closed.
-
-The Lean safety theorem assumes that every confirmed candidate equals the sender's true
-root. Showing that a concrete PSIV/KDF/transcript adapter satisfies this hypothesis is
-separate cryptographic work. A 16-byte tag or a primitive key-commitment result alone does
-not establish that composition, a `70 / 2^128` bound or post-quantum security.
-
-See the [normative specification](../SPEC.md#7-unique-confirmed-candidate-semantics),
-[API guide](API.md#psiv-adapter) and [verification scope](VERIFICATION.md).
+See the [normative specification](../SPEC.md#3-cryptographic-integration-contract),
+[API guide](API.md#optional-psiv-adapter) and [verification scope](VERIFICATION.md).

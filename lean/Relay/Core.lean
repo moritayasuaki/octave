@@ -30,7 +30,7 @@ theorem node_nonzero (i : RelayId) : node i ≠ 0 := by
   rw [Nat.mod_eq_of_lt hi] at hval
   omega
 
-/-- A raw candidate can contain 256. Only canonical byte roots may reach PSIV/KDF. -/
+/-- A raw candidate can contain 256. Only canonical byte roots may reach confirmation. -/
 abbrev Secret := Fin 32 → F257
 abbrev RootBytes := Fin 32 → Fin 256
 abbrev Randomness := Fin 32 → Fin 3 → F257

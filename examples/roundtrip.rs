@@ -7,7 +7,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let shares = split(&root, &mut rng)?;
     let mut received = ReceivedShares::new();
 
-    // Transport would authenticate the peer/session and supply these trusted IDs.
+    // Confidential, authenticated transport would supply these trusted peer/session IDs.
     // This local demo just delivers the first four honest shares.
     for share in shares.into_iter().take(4) {
         let authenticated_relay = share.relay_id();
@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Test oracle ONLY: real Bob does not already know Alice's root. An application
-    // must verify PSIV/KDF confirmation evidence bound to the complete fixed transcript.
+    // must verify confirmation evidence bound to the complete fixed transcript.
     let established = received.recover(|candidate| Ok::<_, Infallible>(candidate == &root))?;
     assert_eq!(established, root);
     println!("Octave Rust roundtrip passed (local confirmation test oracle).");

@@ -1,3 +1,3 @@
 import Relay.Core
 import Relay.Privacy
-import Relay.PSIV
+import Relay.Confirmation

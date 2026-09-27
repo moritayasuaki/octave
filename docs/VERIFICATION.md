@@ -3,7 +3,8 @@
 Octave has kernel-checked Lean proofs and a native Rust implementation tested against
 executable Lean fixtures. These establish algebraic and conditional protocol properties;
 they do not establish Rust/Lean equivalence, constant-time execution or the security of
-a concrete PSIV confirmation exchange.
+a concrete confirmation exchange. The core proofs are independent of a cipher, KDF
+or MAC; PSIV is an optional adapter contract.
 
 ## Reproduce
 
@@ -32,9 +33,9 @@ The workflow does not publish packages.
 
 | Component | Check |
 | --- | --- |
-| Rust | Default-feature, no-default-feature and release tests; release build |
+| Rust | Default, no-default, all-feature and no-default plus PSIV tests; all-feature release tests and core release build |
 | Rust tooling | Formatting, Clippy and API documentation with warnings denied; runnable example |
-| Lean | Build with Lean 4.32.1 and Mathlib v4.32.1, pinned by toolchain and manifest |
+| Lean | Core build and explicit `Relay.PSIV` check with pinned Lean 4.32.1 and Mathlib v4.32.1 |
 | Proof audit | 30 principal declarations; reject `sorryAx` and `Lean.ofReduceBool` |
 | Cross-language fixtures | Regenerate from Lean and compare with checked-in data |
 
@@ -92,7 +93,7 @@ Additional Rust tests cover canonical encodings, label bounds and identity misma
 duplicate labels, insufficient shares, invalid byte roots, candidate deduplication and
 snapshots, ambiguity, verifier errors after an earlier success, redacted debug output,
 RNG failures and rejection limits. Field tests exhaust all 256 nonzero inverses and
-all 65,536 sampler inputs. The PSIV boundary's non-cryptographic mock checks sizes,
+all 65,536 sampler inputs. With the `psiv` feature enabled, its non-cryptographic mock checks sizes,
 limits, error propagation, output-length contracts and cleanup on drop.
 
 [Lean's native tests](../lean/Main.lean) cover 70 unique subsets, availability counts,
@@ -107,9 +108,9 @@ deterministic corruptions; the Lean safety theorem permits arbitrary corrupt val
 under its hypotheses. The equality oracle used in fixtures and examples is a test aid,
 not a real confirmation exchange.
 
-PSIV stays abstract with its existing 32/12/16-byte interface and state layout. No
-concrete backend, contextual KDF, authenticated ingress, transcript codec, replay/nonce
-state machine or cryptographic security reduction is included. A 16-byte tag does not
-by itself prove confirmation soundness or key commitment. Constant-time execution,
-complete memory erasure, forward secrecy and adaptive/full-transcript privacy are not
-proved here. See [PSIV and integration](PSIV.md) for the cryptographic dependency boundary.
+No concrete cipher, contextual KDF, protected transport, transcript codec, replay/freshness
+state machine or cryptographic confirmation exchange is included. The optional PSIV adapter
+retains its 32/12/16-byte interface and unchanged state layout; its wrapper tests are not
+cryptographic evidence. A tag length alone does not prove confirmation soundness.
+Constant-time execution, complete memory erasure, forward secrecy and adaptive/full-transcript
+privacy are not proved here. See the [integration contract](INTEGRATION.md).

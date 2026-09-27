@@ -1,6 +1,8 @@
+import Relay.Confirmation
+
 /-!
-The ChaCha20-Poly1305-PSIV dependency boundary. No cryptographic implementation or
-state packing is introduced here. These are semantic types, not a C ABI.
+Optional ChaCha20-Poly1305-PSIV adapter contract, imported explicitly as `Relay.PSIV`.
+No cryptographic implementation or state packing is introduced here. These are semantic types, not a C ABI.
 -/
 namespace Relay.PSIV
 
@@ -36,17 +38,7 @@ structure API (m : Type → Type) where
   openRecord : Context → Nonce → ByteArray → Record → m (Except Error ByteArray)
   clear : Context → m Unit
 
-/-- Public context that the eventual canonical encoding/KDF/confirmation adapter must bind.
-The core's confirmation predicate is instantiated once per such immutable transcript. -/
-structure ConfirmationContext where
-  protocolVersion : ByteArray
-  suiteId : ByteArray
-  profileId : ByteArray
-  sessionId : ByteArray
-  initiator : ByteArray
-  responder : ByteArray
-  relayRoster : Fin 8 → ByteArray
-  direction : ByteArray
-  challenge : ByteArray
+/-- Compatibility alias for integrations that import the optional PSIV module. -/
+abbrev ConfirmationContext := Relay.ConfirmationContext
 
 end Relay.PSIV

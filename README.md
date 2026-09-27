@@ -30,7 +30,7 @@ define the construction, including its state layout.
 | Key | 32 bytes |
 | Nonce | 12 bytes |
 | Authentication tag | 16 bytes |
-| Record | `ciphertext || tag` |
+| Record | Ciphertext followed by tag |
 | Plaintext and associated data limits | Each at most 65,536 bytes |
 
 Nonce-misuse resistance is protection against nonce-management failures, not a reason
@@ -51,8 +51,8 @@ evidence under a key derived from each candidate root.
 - **At most 70 subsets:** reconstruct all available four-share subsets and deduplicate roots.
 - **Exactly one confirmed root:** no matches, multiple matches or a verifier error fail closed.
 
-**Integration status:** this crate provides the `psiv::Backend` contract and a checked
-`psiv::Session` wrapper. It does not link a concrete PSIV implementation. Applications
+**Integration status:** this crate provides the `psiv::Backend` contract and a
+`psiv::Session` wrapper that validates lengths. It does not link a concrete PSIV implementation. Applications
 must supply the backend, contextual KDF, authenticated relay transport and confirmation
 exchange. Confirmation soundness is an explicit assumption in the Lean theorems;
 the primitive's security analysis does not by itself prove the composed protocol.

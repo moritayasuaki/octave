@@ -50,7 +50,7 @@ relay identity and fixed roster. Different claimed labels do not create addition
 | Key | 32 bytes |
 | External nonce | 12 bytes |
 | Authentication tag | 16 bytes |
-| Encoded record | `ciphertext || tag` |
+| Encoded record | Ciphertext followed by tag |
 | Plaintext maximum | 65,536 bytes per record |
 | Associated data maximum | 65,536 bytes per record |
 | Session operations | Initialize cached key setup, seal, open, clear |
